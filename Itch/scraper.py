@@ -96,3 +96,68 @@ class Scraper:
         Quits the driver and closes every associated window.
         '''
         self.__driver.quit()
+    
+
+    def find_element(self, by: str, value: str) -> WebElement:
+        '''
+        Find an element given a By strategy and locator.
+
+        Parameters
+        ----------
+        by: str
+            Strategy for locating elements.
+        
+        value: str
+            Value by which to search according to the locator strategy.
+        '''
+        return self.__driver.find_element(by, value)
+    
+    
+    def find_elements(self, by: str, value: str) -> List[WebElement]:
+        '''
+        Find elements given a By strategy and locator.
+
+        Parameters
+        ----------
+        by: str
+            Strategy for locating elements.
+        
+        value: str
+            Value by which to search according to the locator strategy.
+        '''
+        return self.__driver.find_elements(by, value)
+
+
+    def click_element(self, by: str, value: str) -> None:
+        '''
+        Finds an element and clicks on it.
+
+        Parameters
+        ----------
+        by: str
+            Strategy for locating elements.
+        
+        value: str
+            Value by which to search according to the locator strategy.
+        '''
+        element = self.__driver.find_element(by, value)
+        element.click()
+
+
+    def scroll_to_bottom(self) -> None:
+        '''
+        Scrolls to the bottom of the current page.
+        '''
+        self.__driver.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+    
+
+    def scroll_to(self, height: int) -> None:
+        '''
+        Scrolls to a specified point on the page, in pixels.
+
+        Parameters
+        ----------
+        height: int
+            Height to scroll to (in pixels). 0 is the top of the document.
+        '''
+        self.__driver.execute_script(f'window.scrollTo({height});')
