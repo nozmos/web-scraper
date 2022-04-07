@@ -161,3 +161,37 @@ class Scraper:
             Height to scroll to (in pixels). 0 is the top of the document.
         '''
         self.__driver.execute_script(f'window.scrollTo({height});')
+
+
+    def extend_url(self, *extensions: str) -> None:
+        '''
+        Appends to the current URL, separating by forward-slashes, then gets the new URL.
+
+        Parameters
+        ----------
+        extensions: str
+            List of URL extensions to append.
+        '''
+
+        new_url = self.__driver.current_url.removesuffix('/')
+        for extension in extensions:
+            new_url += '/' + extension
+        
+        self.__driver.get(new_url)
+
+
+    def trim_url(self, *extensions: str) -> None:
+        '''
+        Removes extensions from the current URL, then gets the new URL.
+
+        Parameters
+        ----------
+        extensions: str
+            Strings to remove from current URL, including leading forward-slashes.
+        '''
+
+        new_url = self.__driver.current_url
+        for extension in extensions:
+            new_url = new_url.replace('/' + extension + '/', '/')
+        
+        self.__driver.get(new_url)
