@@ -2,7 +2,7 @@ from selenium.webdriver import Chrome
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
-from typing import List
+from typing import Dict, List, Tuple
 
 class Scraper:
     '''
@@ -16,6 +16,48 @@ class Scraper:
     root: str
         Root URL. Can be loaded with the Scraper.home() method. May be modified using the set_root method.
     '''
+
+    class Result:
+        '''
+        Inner class for storing the results of scraping data from a webpage.
+        '''
+        def __init__(self, driver: Chrome, fetch_strategies: Tuple[Tuple[str]]) -> None:
+            self.__driver = driver
+            self.__fetch_strategies = fetch_strategies
+        
+
+        def from_pages(self, urls: List[str]) -> Dict[str, str]:
+            '''
+            Fetches data at each given URL.
+
+            Parameters
+            ----------
+            urls: List[str]
+                List of URLs to scrape.
+            
+            Returns
+            -------
+            Dict[str, str] : SQL-ready dictionary containing scraped data.
+            '''
+
+            data = {
+                f[0]: [] for f in self.__fetch_strategies
+            }
+
+            data['uuid'] = uuid4()
+
+            for url in urls:
+                self.__driver.get(url)
+
+                for f in self.__fetch_strategies:
+                    try:
+                        fetch_data = self.__driver.find_element(f[1], f[2]).get_attribute('textContent')
+                    except:
+                        fetch_data = ''
+                    
+                    data[f[0]].append(fetch_data)
+            
+            return data
     
     
     def __init__(self, root: str, headless: bool=False, ignore_warnings: bool=False) -> None:
@@ -195,3 +237,23 @@ class Scraper:
             new_url = new_url.replace('/' + extension + '/', '/')
         
         self.__driver.get(new_url)
+    
+
+    def fetch_text(self, *fetch_strategies: Tuple[str]) -> 'Scraper.Result':
+        '''
+        Stores fetch strategies in a Result object ready for data to be scraped. Data can then be retrieved using the from_pages method in the returned Result object.
+
+        Parameters
+        ----------
+        *fetch_strategies: Tuple[str]
+            3-tuple of a name, By strategy, and value for scraping data. 
+        
+        Returns
+        -------
+        Scraper.Result : 
+        '''
+
+        for fetch_strategy in fetch_strategies:
+            assert len(fetch_strategy) == 3, 'A fetch strategy must be a tuple containing a name, By strategy, and value.'
+        
+        return Scraper.Result(self.__driver, fetch_strategies)
