@@ -1,4 +1,5 @@
 from __future__ import annotations
+from locator import Locator, LOCATE
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -278,3 +279,55 @@ class Scraper:
         for _index, _url in enumerate(url_list):
             file_extension = _url.rpartition('.')[-1]
             self.download_image(_url, f'image{_index}.{file_extension}')
+    
+
+    def create_scraping_method(self, **locators: Locator | Tuple) -> scrape_data.ScrapeData:
+        '''
+        Prepares a ScrapeData object which can retrieve data from given webpages.
+
+        It is recommended to use `locate()` for defining locators, to increase readability (see below).
+
+        ### Parameters
+        `**locators: Locator | Tuple`
+            Keyword arguments for locators.
+
+        ### Usage
+        ```python
+        get_product_name_and_price = scraper.create_scraping_method(
+            product_name = LOCATE.TEXT.BY.CLASS_NAME('product-title')
+            price = LOCATE.TEXT.BY.CSS_SELECTOR('h2.price-tag')
+        )
+        
+        data = get_product_name_and_price.from_pages(
+            ['http://www.mywebsite.com/products/1', 'http://www.mywebsite.com/products/2']
+        )
+        ```
+        `from_pages()` is an instance method of the `ScrapeData` class for performing the scrape on a list of URLs.
+        The `from_pages()` instance method will automatically perform a JSON dump of all fetched data into a local directory unless `perform_dump` is set to False.
+
+        Dumped data will be in the following SQL-ready form (using the above as an example):
+        ```JSON
+        {
+            "product_name": ["HB Pencil", "A4 Notepad"],
+            "price": ["£0.99", "£2.99"],
+            "uuid": ["urn:uuid:9954bc7f-937b-4519-b1e6-ee1b39b07deb", "urn:uuid:8e726fb4-04f1-485a-aaa0-b46f42096e1d"]
+        }
+        ```
+        '''
+        # If tuples are used, convert to Locator objects
+        for id, locator_like in locators.items():
+            if isinstance(locator_like, Tuple):
+
+                if len(locator_like) == 2:
+                    html_attribute = 'textContent'
+                    strategy = locator_like[0]
+                    value = locator_like[1]
+                    locators[id] = LOCATE.html_attribute(html_attribute).by(strategy)(value)
+                
+                elif len(locator_like) == 3:
+                    html_attribute = locator_like[0]
+                    strategy = locator_like[1]
+                    value = locator_like[2]
+                    locators[id] = LOCATE.html_attribute(html_attribute).by(strategy)(value)
+        
+        return scrape_data.ScrapeData(self, locators)
