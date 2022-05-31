@@ -4,7 +4,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
-from typing import Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import scrape_data
