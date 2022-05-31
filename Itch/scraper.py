@@ -1,9 +1,10 @@
 from __future__ import annotations
 from selenium.webdriver import Chrome
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
 from typing import Dict, List, Tuple
+from webdriver_manager.chrome import ChromeDriverManager
 import os
 import scrape_data
 import urllib
@@ -60,6 +61,48 @@ class Scraper:
     @property
     def current_url(self) -> str:
         return self.__driver.current_url
+
+    
+    # INSTANCE METHODS
+    def search(self,
+            search_terms: str,
+            input_xpath: str='//input[@class="search_input"]',
+            button_xpath: str='//button[@aria-label="Search"]') -> None:
+        '''
+        Performs a search using the search bar on the current webpage.
+
+        ### Parameters
+        `search_terms: str`
+            String which will be used for the search.
+        
+        `input_xpath: str`
+            XPath to the search bar input element. (Default: '//input[@class="search_input"]')
+        
+        `button_xpath: str`
+            XPath to the search button element. (Default: '//button[@aria-label="Search"]')
+        '''
+
+        print('Attempting search...')
+        
+        try:
+            search_bar = self.__driver.find_element(By.XPATH, input_xpath)
+        except:
+            print(f'Unable to find search bar with XPATH \'{input_xpath}\'. Terminating search...')
+            return
+        
+        try:
+            search_button = self.__driver.find_element(By.XPATH, button_xpath)
+        except:
+            print(f'Unable to find search button with XPATH \'{button_xpath}\'. Terminating search...')
+            return
+        
+        try:
+            search_bar.send_keys(search_terms)
+            search_button.click()
+        except Exception as e:
+            print(f'Could not perform search.')
+            print(e)
+            return
     
 
     def home(self) -> None:
