@@ -84,6 +84,12 @@ class _LOCATE:
         return _HTML_ATTRIBUTE(html_attribute_name)
 
 
+    # ELEMENT PROPERTY (for if the element itself needs to be located)
+    @property
+    @__sets_html_attribute()
+    def ELEMENT(): ...
+
+
     # PROPERTIES (HTML ATTRIBUTES)
     @property
     @__sets_html_attribute()

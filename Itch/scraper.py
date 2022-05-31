@@ -1,5 +1,5 @@
 from __future__ import annotations
-from locator import Locator, LOCATE
+from locator import Locator, LOCATE, LocatorNotDefinedError
 from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -16,10 +16,10 @@ class Scraper:
     Webscraping class for automatically retrieving data from webpages.
 
     ### Properties
-    driver: WebDriver
+    `driver: WebDriver`
         Main driver for the class. Handles requests and data retrieval.
     
-    root: str
+    `root: str`
         Root URL. Can be loaded with the Scraper.home() method. May be modified using the set_root method.
     '''
     
@@ -157,9 +157,8 @@ class Scraper:
         '''
         Sets the scraper object's root URL.
 
-        Parameters
-        ----------
-        URL: str
+        ### Parameters
+        `URL: str`
             New URL to replace the current one.
         '''
         self.__root = url
@@ -172,49 +171,76 @@ class Scraper:
         self.__driver.quit()
     
 
-    def find_element(self, by: str, value: str) -> WebElement:
+    def find_element(self, by: str | Locator, value: str) -> WebElement:
         '''
         Find an element given a By strategy and locator.
 
-        Parameters
-        ----------
-        by: str
+        ### Parameters
+        `by: str | Locator`
             Strategy for locating elements.
         
-        value: str
+        `value: str`
             Value by which to search according to the locator strategy.
         '''
+
+        if isinstance(by, str):
+            if value is None:
+                raise LocatorNotDefinedError(f'{by} not defined.')
+            
+        elif isinstance(by, Locator):
+            _locator = by
+            by = _locator.by
+            value = _locator.value
+        
         return self.__driver.find_element(by, value)
     
     
-    def find_elements(self, by: str, value: str) -> List[WebElement]:
+    def find_elements(self, by: str | Locator, value: str) -> List[WebElement]:
         '''
         Find elements given a By strategy and locator.
 
-        Parameters
-        ----------
-        by: str
+        ### Parameters
+        `by: str | Locator`
             Strategy for locating elements.
         
-        value: str
+        `value: str`
             Value by which to search according to the locator strategy.
         '''
+
+        if isinstance(by, str):
+            if value is None:
+                raise LocatorNotDefinedError(f'{by} not defined.')
+            
+        elif isinstance(by, Locator):
+            _locator = by
+            by = _locator.by
+            value = _locator.value
+        
         return self.__driver.find_elements(by, value)
 
 
     @__log_url
-    def click_element(self, by: str, value: str) -> None:
+    def click_element(self, by: str | Locator, value: str=None) -> None:
         '''
         Finds an element and clicks on it.
 
-        Parameters
-        ----------
-        by: str
+        ### Parameters
+        `by: str | Locator`
             Strategy for locating elements.
         
-        value: str
+        `value: str`
             Value by which to search according to the locator strategy.
         '''
+
+        if isinstance(by, str):
+            if value is None:
+                raise LocatorNotDefinedError(f'{by} not defined.')
+            
+        elif isinstance(by, Locator):
+            _locator = by
+            by = _locator.by
+            value = _locator.value
+        
         element = self.__driver.find_element(by, value)
         element.click()
 
@@ -230,24 +256,23 @@ class Scraper:
         '''
         Scrolls to a specified point on the page, in pixels.
 
-        Parameters
-        ----------
-        height: int
+        ### Parameters
+        `height: int`
             Height to scroll to (in pixels). 0 is the top of the document.
         '''
         self.__driver.execute_script(f'window.scrollTo({height});')
     
 
     def retrieve_urls(self,
-            by: str,
-            value: str,
+            by: str | Locator,
+            value: str=None,
             limit: int=None,
             next_button_xpath: str=None) -> List[str]:
         '''
         Retrieves a list of URLs from the href attribute of the given elements on the current webpage.
 
         ### Parameters
-        `by: str`
+        `by: str | Locator`
             Strategy for locating elements.
         
         `value: str`
@@ -265,6 +290,15 @@ class Scraper:
 
         elements = []
         response = 'Finished retrieving URLs.'
+
+        if isinstance(by, str):
+            if value is None:
+                raise LocatorNotDefinedError(f'{by} not defined.')
+            
+        elif isinstance(by, Locator):
+            _locator = by
+            by = _locator.by
+            value = _locator.value
 
         print(f'Retrieving URLs from {self.__driver.current_url}')
         print(f'Using {by} \'{value}\'')
@@ -299,9 +333,8 @@ class Scraper:
         '''
         Appends to the current URL, separating by forward-slashes, then gets the new URL.
 
-        Parameters
-        ----------
-        extensions: str
+        ### Parameters
+        `extensions: str`
             List of URL extensions to append.
         '''
 
@@ -316,9 +349,8 @@ class Scraper:
         '''
         Removes extensions from the current URL, then gets the new URL.
 
-        Parameters
-        ----------
-        extensions: str
+        ### Parameters
+        `extensions: str`
             Strings to remove from current URL, including leading forward-slashes.
         '''
 
