@@ -54,6 +54,12 @@ class Scraper:
         self.__root = root
 
         self.home()
+
+
+    # PROPERTIES
+    @property
+    def current_url(self) -> str:
+        return self.__driver.current_url
     
 
     def home(self) -> None:
