@@ -5,7 +5,8 @@ import json
 import os
 import scraper
 
-class ScrapeData:
+
+class ScrapingMethod:
     '''
     Object class for holding scraping strategies for later execution, and storing the results.
 

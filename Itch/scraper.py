@@ -7,7 +7,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from typing import Any, Callable, Dict, List, Tuple
 from webdriver_manager.chrome import ChromeDriverManager
 import os
-import scrape_data
+import scraping_method
 import urllib
 
 
@@ -301,7 +301,7 @@ class Scraper:
             self.download_image(_url, f'image{_index}.{file_extension}')
     
 
-    def create_scraping_method(self, **locators: Locator | Tuple) -> scrape_data.ScrapeData:
+    def create_scraping_method(self, **locators: Locator | Tuple) -> scraping_method.ScrapingMethod:
         '''
         Prepares a ScrapeData object which can retrieve data from given webpages.
 
@@ -350,4 +350,4 @@ class Scraper:
                     value = locator_like[2]
                     locators[id] = LOCATE.html_attribute(html_attribute).by(strategy)(value)
         
-        return scrape_data.ScrapeData(self, locators)
+        return scraping_method.ScrapingMethod(self, locators)
