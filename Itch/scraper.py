@@ -3,6 +3,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
 from typing import Dict, List, Tuple
+import os
+import urllib
 
 class Scraper:
     '''
@@ -23,7 +25,9 @@ class Scraper:
         '''
         def __init__(self, driver: Chrome, fetch_strategies: Tuple[Tuple[str]]) -> None:
             self.__driver = driver
-            self.__fetch_strategies = fetch_strategies
+            self.__fetch_strategies = {
+
+            }
         
 
         def from_pages(self, urls: List[str]) -> Dict[str, str]:
@@ -51,7 +55,7 @@ class Scraper:
 
                 for f in self.__fetch_strategies:
                     try:
-                        fetch_data = self.__driver.find_element(f[1], f[2]).get_attribute('textContent')
+                        fetch_data = self.__driver.find_element(f[1], f[2]).get_attribute(self.__attribute)
                     except:
                         fetch_data = ''
                     
@@ -237,23 +241,32 @@ class Scraper:
             new_url = new_url.replace('/' + extension + '/', '/')
         
         self.__driver.get(new_url)
+
+
+    def download_image(self, url: str, filename: str) -> None:
+        '''
+        Download the image stored at the given url in a list, and temporarily store it under a local directory with the given filename.
+
+        ### Parameters
+        `url: str`
+            URL of image.
+        
+        `filename: str`
+            File name to save the image under (extension included).
+        '''
+        os.makedirs('./raw_data/images/', exist_ok=True)
+
+        urllib.request.urlretrieve(url, os.path.join('./raw_data/images/', filename))
     
 
-    def fetch_text(self, *fetch_strategies: Tuple[str]) -> 'Scraper.Result':
+    def download_images(self, url_list: List[str]) -> None:
         '''
-        Stores fetch strategies in a Result object ready for data to be scraped. Data can then be retrieved using the from_pages method in the returned Result object.
+        Downloads the images stored at each url in a list and temporarily stores them in a local directory.
 
-        Parameters
-        ----------
-        *fetch_strategies: Tuple[str]
-            3-tuple of a name, By strategy, and value for scraping data. 
-        
-        Returns
-        -------
-        Scraper.Result : 
+        ### Parameters
+        `url_list: List[str]`
+            List of image URLs.
         '''
-
-        for fetch_strategy in fetch_strategies:
-            assert len(fetch_strategy) == 3, 'A fetch strategy must be a tuple containing a name, By strategy, and value.'
-        
-        return Scraper.Result(self.__driver, fetch_strategies)
+        for _index, _url in enumerate(url_list):
+            file_extension = _url.rpartition('.')[-1]
+            self.download_image(_url, f'image{_index}.{file_extension}')
