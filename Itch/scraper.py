@@ -4,7 +4,7 @@ from selenium.webdriver import Chrome
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.remote.webelement import WebElement
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Tuple
 from webdriver_manager.chrome import ChromeDriverManager
 import os
 import scrape_data
@@ -58,6 +58,20 @@ class Scraper:
         self.home()
 
 
+    # DECORATORS
+    def __log_url(func: Callable) -> Callable:
+
+        def wrapper(self: Scraper, *args, **kwargs) -> Any:
+
+            result = func(self, *args, **kwargs)
+
+            print(f'[{self.__driver.current_url}]')
+
+            return result
+            
+        return wrapper
+
+
     # PROPERTIES
     @property
     def current_url(self) -> str:
@@ -65,6 +79,7 @@ class Scraper:
 
     
     # INSTANCE METHODS
+    @__log_url
     def search(self,
             search_terms: str,
             input_xpath: str='//input[@class="search_input"]',
@@ -106,6 +121,7 @@ class Scraper:
             return
     
 
+    @__log_url
     def home(self) -> None:
         '''
         Load the scraper object's root URL.
@@ -113,6 +129,7 @@ class Scraper:
         self.__driver.get(self.__root)
     
 
+    @__log_url
     def get(self, url: str) -> None:
         '''
         Loads a webpage in the current browser session.
@@ -120,6 +137,7 @@ class Scraper:
         self.__driver.get(url)
     
 
+    @__log_url
     def back(self) -> None:
         '''
         Goes one step backward in the user's history.
@@ -127,6 +145,7 @@ class Scraper:
         self.__driver.back()
     
 
+    @__log_url
     def forward(self) -> None:
         '''
         Goes one step forward in the user's history.
@@ -183,6 +202,7 @@ class Scraper:
         return self.__driver.find_elements(by, value)
 
 
+    @__log_url
     def click_element(self, by: str, value: str) -> None:
         '''
         Finds an element and clicks on it.
