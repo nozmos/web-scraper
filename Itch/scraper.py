@@ -236,6 +236,63 @@ class Scraper:
             Height to scroll to (in pixels). 0 is the top of the document.
         '''
         self.__driver.execute_script(f'window.scrollTo({height});')
+    
+
+    def retrieve_urls(self,
+            by: str,
+            value: str,
+            limit: int=None,
+            next_button_xpath: str=None) -> List[str]:
+        '''
+        Retrieves a list of URLs from the href attribute of the given elements on the current webpage.
+
+        ### Parameters
+        `by: str`
+            Strategy for locating elements.
+        
+        `value: str`
+            Value by which to search according to the locator strategy.
+        
+        `limit: int`
+            Max number of results to fetch. If None, obtain all results possible. (Default: None)
+
+        `next_button_xpath: str`
+            XPath to the "Next" button (if applicable) to allow searching of multiple pages. (Default: None)
+        
+        ### Returns
+        `List[str]` : List of URLs from the href property of each selected element.
+        '''
+
+        elements = []
+        response = 'Finished retrieving URLs.'
+
+        print(f'Retrieving URLs from {self.__driver.current_url}')
+        print(f'Using {by} \'{value}\'')
+
+        if limit:
+            print(f'Limit: {limit}')
+            while len(elements) < limit:
+                elements.extend(self.find_elements(by, value))
+            elements = elements[:limit]
+
+        elif next_button_xpath:
+            while True:
+                try:
+                    next_button = self.find_element(By.XPATH, next_button_xpath)
+                except:
+                    print(f'Could not find next_button at XPATH \'{next_button_xpath}\'')
+                    response = 'URL retrieval interrupted. Terminating...'
+                    break
+
+                elements.extend(self.find_elements(by, value))
+                next_button.click()
+        
+        else:
+            elements = self.find_elements(by, value)
+        
+        print(response)
+
+        return list(element.get_attribute('href') for element in elements)
 
 
     def extend_url(self, *extensions: str) -> None:
