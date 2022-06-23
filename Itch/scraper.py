@@ -8,8 +8,10 @@ from selenium.webdriver.remote.webelement import WebElement
 from typing import Any, Callable, Dict, List, Tuple
 from uuid import uuid4
 from webdriver_manager.chrome import ChromeDriverManager
+import boto3
 import json
 import os
+import time
 import urllib
 
 
@@ -50,6 +52,7 @@ class ScrapingMethod:
         self.__find_element = scraper.find_element
         self.__get = scraper.get
         self.__locators = locators
+            
 
         # Initialise data dict using keys from locator dictionary
         self.__data = { column_name: [] for column_name in self.__locators.keys() if column_name != 'uuid' }
@@ -59,7 +62,9 @@ class ScrapingMethod:
 
     def from_pages(self,
             urls: List[str],
-            perform_dump: bool=True) -> Dict:
+            dump_json: bool=True,
+            s3_bucket_name: str=None,
+            sleep_time: int=2) -> Dict:
         '''
         Fetches data at each given URL.
 
@@ -67,7 +72,7 @@ class ScrapingMethod:
         `urls: List[str]`
             List of URLs to scrape.
         
-        `perform_dump: bool`
+        `dump_json: bool`
             If set to False, do not automatically dump data after scraping. (Default: True)
         
         ### Returns
@@ -76,17 +81,21 @@ class ScrapingMethod:
 
         print('\nScraping...')
 
+        urls = list(set(urls)) # Prevent re-scraping the same page.
+
         for url in urls:
             print()
 
             self.__get(url)
+            time.sleep(sleep_time)
             
             print('Creating UUID4...')
             uuid = uuid4().urn
             self.__data['uuid'].append(uuid)
 
             for column_name, locator in self.__locators.items():
-                by, value, html_attribute = locator.by, locator.value, locator.html_attribute
+                by, value, html_attribute, convert_to_type = locator.by, locator.value, locator.html_attribute, locator.convert_to_type
+                row_data = None
 
                 try:
                     print(f'Scraping field \'{column_name}\'...')
@@ -98,6 +107,12 @@ class ScrapingMethod:
                 if row_data is None:
                     print(f'ERROR: Element does not have attribute or property with name "{html_attribute}".')
                     row_data = locator.default_if_not_found
+                
+                elif convert_to_type is not None:
+                    try:
+                        row_data = convert_to_type(row_data)
+                    except:
+                        print(f'Failed to convert row data to type "{convert_to_type}".')
 
                 print(f'Appending data...')
 
@@ -105,15 +120,16 @@ class ScrapingMethod:
         
         print(f'\nScraping complete.')
 
-        if perform_dump:
-            self.dump()
+        if dump_json:
+            self.dump(s3_bucket_name=s3_bucket_name)
 
         return self.__data
     
 
     def dump(self,
             dir: str='./raw_data/',
-            filename: str='data.json') -> None:
+            filename: str='data.json',
+            s3_bucket_name: str=None) -> None:
         '''
         Creates a new directory (if one doesn't exist), and performs a JSON dump of currently stored data.
 
@@ -129,12 +145,23 @@ class ScrapingMethod:
 
         os.makedirs(dir, exist_ok=True)
         filepath = os.path.join(dir, filename)
+        print(filepath)
         
         print('\nPerforming JSON dump...')
 
         try:
             with open(filepath, 'w') as file:
                 json.dump(self.__data, file)
+
+            if s3_bucket_name is not None:
+                print('Creating s3 client...')
+                s3_client = boto3.client('s3')
+
+                print(f'Uploading to S3 bucket "{s3_bucket_name}" from filepath "{filepath}"...')
+                response = s3_client.upload_file(filepath, s3_bucket_name, filename)
+
+                print('Finished uploading.')
+
             print('Dump complete.')
         
         except Exception as e:
@@ -157,7 +184,8 @@ class Scraper:
     def __init__(self,
             root: str,
             headless: bool=False,
-            ignore_warnings: bool=True) -> None:
+            ignore_warnings: bool=True,
+            s3_bucket_name: str=None) -> None:
         '''
         Initialises the Scraper object.
 
@@ -174,6 +202,8 @@ class Scraper:
 
         options = Options()
 
+        options.add_argument('--disable-dev-shm-usage')
+
         if ignore_warnings:
             options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
             options.set_capability('detach', True)
@@ -185,6 +215,7 @@ class Scraper:
         self.__driver = Chrome(ChromeDriverManager().install(), options=options)
 
         self.__root = root
+        self.__s3_bucket_name = s3_bucket_name
 
         self.home()
 
@@ -347,7 +378,12 @@ class Scraper:
             by = _locator.by
             value = _locator.value
         
-        return self.__driver.find_elements(by, value)
+        result = self.__driver.find_elements(by, value)
+
+        if not result:
+            print(f'Could not find element using {by} "{value}".')
+        
+        return result
 
 
     @__log_url
