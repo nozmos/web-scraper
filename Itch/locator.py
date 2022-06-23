@@ -23,11 +23,25 @@ class Locator:
 
     `default_if_not_found: Any`
         Value to return if the scraper cannot find a match for the locator.
+    
+    `type_caster: Callable[[str], Any]`
+        Function which can be used to convert the located data to a specific type (e.g. `int`).
     '''
     html_attribute: str
     by: str
     value: str
     default_if_not_found: Any = None
+    convert_to_type: Callable = None
+
+    # @property
+    # def convert_to_type(self, callable: Callable[[str], Any]) -> Locator:
+    #     return Locator(
+    #         self.html_attribute,
+    #         self.by,
+    #         self.value,
+    #         self.default_if_not_found,
+    #         callable
+    #     )
 
 
 @dataclass
@@ -193,12 +207,18 @@ class _BY:
     __by: str = None
     
     # MAGIC METHODS
-    def __call__(self, value: str, default_if_not_found: Any=None) -> Locator:
+    def __call__(self, value: str, default_if_not_found: Any=None, convert_to_type: Callable[[str], Any]=None) -> Locator:
         if self.__by is None:
             raise LocatorNotDefinedError('Locator must be given a By strategy.')
 
         else:
-            return Locator(self.__html_attribute, self.__by, value, default_if_not_found)
+            return Locator(
+                self.__html_attribute,
+                self.__by,
+                value,
+                default_if_not_found,
+                convert_to_type
+            )
 
 
     def __repr__(self) -> str:
