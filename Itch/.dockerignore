@@ -1,0 +1,8 @@
+__pycache__
+config
+itch_tags.json
+README.md
+scraper_old.py
+scraper.ipynb
+scraping_method.py
+test.py
